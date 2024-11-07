@@ -23,7 +23,7 @@ modalSearchButton.addEventListener('click', () => {
     clearRecords();
 
     // Solicitud GET en axios con el nombre del país
-    axios.get(`//54.144.92.141/php-intro-connection/getRecords.php?search=${encodeURIComponent(countryName)}`)
+    axios.get(`http://54.144.92.141/php-intro-connection/getRecords.php?search=${encodeURIComponent(countryName)}`)
         .then(response => {
             const data = response.data;
             if (data.country && data.country.length > 0) {
@@ -51,10 +51,10 @@ modalSearchButton.addEventListener('click', () => {
 countryBtn.addEventListener('click', async () => {
     clearRecords();
     try {
-        const ipResponse = await axios.get('//54.144.92.141/php-intro-connection/index.php');
+        const ipResponse = await axios.get('http://54.144.92.141/php-intro-connection/index.php');
         const countryCode3 = ipResponse.data.country_code3;
         if (countryCode3) {
-            const response = await axios.get(`//54.144.92.141/php-intro-connection/getRecords.php?table=country&country_code3=${countryCode3}`);
+            const response = await axios.get(`http://54.144.92.141/php-intro-connection/getRecords.php?table=country&country_code3=${countryCode3}`);
             if (response.data.length > 0) {
                 populateTable(response.data, ['Code', 'Name', 'Continent', 'Region', 'Population'], 'Países');
             } else {
@@ -70,7 +70,7 @@ countryBtn.addEventListener('click', async () => {
 
 cityBtn.addEventListener('click', () => {
     clearRecords();
-    axios.get('//54.144.92.141/php-intro-connection/getRecords.php?table=city')
+    axios.get('http://54.144.92.141/php-intro-connection/getRecords.php?table=city')
         .then(response => {
             populateTable(response.data, ['ID', 'Name', 'CountryCode', 'District', 'Population'], 'Ciudades');
         })
@@ -81,7 +81,7 @@ cityBtn.addEventListener('click', () => {
 
 countryLanguageBtn.addEventListener('click', () => {
     clearRecords();
-    axios.get('//54.144.92.141/php-intro-connection/getRecords.php?table=countrylanguage')
+    axios.get('http://54.144.92.141/php-intro-connection/getRecords.php?table=countrylanguage')
         .then(response => {
             populateTable(response.data, ['CountryCode', 'Language', 'IsOfficial', 'Percentage'], 'Idiomas');
         })
