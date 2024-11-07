@@ -1,95 +1,64 @@
-//hola
 const countryBtn = document.getElementById('countryBtn');
 const cityBtn = document.getElementById('cityBtn');
 const countryLanguageBtn = document.getElementById('countryLanguageBtn');
-const searchCountryBtn = document.getElementById('searchCountryBtn');
 const recordsTable = document.getElementById('records');
-const searchInput = document.getElementById('searchInput');
-const modalSearchButton = document.getElementById('modalSearchButton');
-const searchModal = new bootstrap.Modal(document.getElementById('searchModal'));
 
-// Mostrar la ventana flotante
-searchCountryBtn.addEventListener('click', () => {
-    searchModal.show();
-});
-
-// Evento para el botón Buscar dentro del modal
-modalSearchButton.addEventListener('click', () => {
-    const countryName = searchInput.value.trim();
-    if (!countryName) {
-        alert("Debes ingresar un nombre de país.");
-        return;
-    }
-    clearRecords();
-
-    // Solicitud GET en axios con el nombre del país
-    axios.get(`//54.144.92.141/php-intro-connection/getRecords.php?search=${encodeURIComponent(countryName)}`)
-        .then(response => {
-            const data = response.data;
-            if (data.country && data.country.length > 0) {
-                populateTable(data.country, ['Code', 'Name', 'Continent', 'Region', 'Population'], 'Países');
-            } else {
-                alert("No se encontraron registros para el país especificado.");
-            }
-
-            if (data.city && data.city.length > 0) {
-                populateTable(data.city, ['ID', 'Name', 'CountryCode', 'District', 'Population'], 'Ciudades');
-            }
-
-            if (data.countrylanguage && data.countrylanguage.length > 0) {
-                populateTable(data.countrylanguage, ['CountryCode', 'Language', 'IsOfficial', 'Percentage'], 'Idiomas');
-            }
-        })
-        .catch(error => {
-            console.error(error);
-            alert("Ocurrió un error al realizar la búsqueda.");
-        });
-
-    searchModal.hide();
-});
-
-countryBtn.addEventListener('click', async () => {
-    clearRecords();
+// Función para obtener el código de país según la IP
+async function getCountryCode() {
     try {
-        const ipResponse = await axios.get('//54.144.92.141/php-intro-connection/index.php');
-        const countryCode3 = ipResponse.data.country_code3;
-        if (countryCode3) {
-            const response = await axios.get(`//54.144.92.141/php-intro-connection/getRecords.php?table=country&country_code3=${countryCode3}`);
-            if (response.data.length > 0) {
-                populateTable(response.data, ['Code', 'Name', 'Continent', 'Region', 'Population'], 'Países');
-            } else {
-                alert("No se encontraron registros para el país correspondiente.");
-            }
-        } else {
-            console.error("El country_code3 no está definido.");
-        }
+        const response = await axios.get('//54.144.92.141/php-intro-connection/index.php');
+        return response.data.country_code3;
     } catch (error) {
-        console.error("Error al obtener los datos de países filtrados:", error);
+        console.error("Error al obtener el código de país:", error);
+        return null;
     }
-});
+}
 
-cityBtn.addEventListener('click', () => {
+// Función para mostrar ciudades del país detectado
+async function showCities() {
     clearRecords();
-    axios.get('//54.144.92.141/php-intro-connection/getRecords.php?table=city')
-        .then(response => {
-            populateTable(response.data, ['ID', 'Name', 'CountryCode', 'District', 'Population'], 'Ciudades');
-        })
-        .catch(error => {
-            console.error(error);
-        });
-});
+    const countryCode3 = await getCountryCode();
+    if (countryCode3) {
+        axios.get(`//54.144.92.141/php-intro-connection/getRecords.php?table=city&country_code3=${countryCode3}`)
+            .then(response => {
+                if (response.data.length > 0) {
+                    // Ordena para mostrar la ciudad detectada primero, si existe
+                    const sortedData = response.data.sort((a, b) => a.isDetected ? -1 : 1);
+                    populateTable(sortedData, ['ID', 'Name', 'CountryCode', 'District', 'Population'], 'Ciudades');
+                } else {
+                    alert("No se encontraron ciudades para el país correspondiente.");
+                }
+            })
+            .catch(error => {
+                console.error("Error al obtener las ciudades:", error);
+            });
+    }
+}
 
-countryLanguageBtn.addEventListener('click', () => {
+// Función para mostrar idiomas del país detectado
+async function showLanguages() {
     clearRecords();
-    axios.get('//54.144.92.141/php-intro-connection/getRecords.php?table=countrylanguage')
-        .then(response => {
-            populateTable(response.data, ['CountryCode', 'Language', 'IsOfficial', 'Percentage'], 'Idiomas');
-        })
-        .catch(error => {
-            console.error(error);
-        });
-});
+    const countryCode3 = await getCountryCode();
+    if (countryCode3) {
+        axios.get(`//54.144.92.141/php-intro-connection/getRecords.php?table=countrylanguage&country_code3=${countryCode3}`)
+            .then(response => {
+                if (response.data.length > 0) {
+                    populateTable(response.data, ['CountryCode', 'Language', 'IsOfficial', 'Percentage'], 'Idiomas');
+                } else {
+                    alert("No se encontraron idiomas para el país correspondiente.");
+                }
+            })
+            .catch(error => {
+                console.error("Error al obtener los idiomas:", error);
+            });
+    }
+}
 
+// Asignar eventos a los botones
+cityBtn.addEventListener('click', showCities);
+countryLanguageBtn.addEventListener('click', showLanguages);
+
+// Función para poblar la tabla
 function populateTable(data, columns, tableTitle = '') {
     recordsTable.innerHTML = '';
     if (tableTitle) {
